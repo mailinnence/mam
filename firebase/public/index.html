@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>맘가득찬 - 오늘의 식단 보기</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+:root {
+
+  --primary:#FF6B35; --primary-light:#FF8C5A;
+
+  --bg:#F8F9FA; --text:#1A1A2E; --text-sub:#6B7280;
+
+  --border:#E9ECEF; --shadow:0 8px 30px rgba(0,0,0,0.05); --radius:24px;
+
+  /* 메뉴별 포인트 컬러 */
+
+  --A:#FF6B6B; --B:#4ECDC4; --C:#45B7D1; --D:#96CEB4; --E:#F7C59F; --F:#C77DFF;
+
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); }
+
+.hidden { display: none !important; }
+
+
+
+/* 헤더 */
+
+.header { background: #fff; border-bottom: 1px solid var(--border); padding: 16px 20px; display: flex; justify-content: center; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+
+.logo-title { font-size: 20px; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
+
+
+
+main { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
+
+
+
+/* 섹션 타이틀 */
+
+.sec-title { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+
+.sec-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 24px; }
+
+
+
+/* 달력 카드 */
+
+.cal-card { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 30px; border: 1px solid rgba(0,0,0,0.03); }
+
+.cal-month { font-size: 18px; font-weight: 800; text-align: center; color: var(--text); margin-bottom: 20px; }
+
+.cal-head { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 10px; }
+
+.cal-head div { text-align: center; font-size: 12px; font-weight: 700; color: var(--text-sub); }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+
+.cal-cell {
+
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+
+  border-radius: 14px; font-size: 14px; font-weight: 700; cursor: default; color: #ccc;
+
+}
+
+
+
+/* 메뉴가 있는 날 스타일 */
+
+.cal-cell.avail {
+
+  background: #fff; color: var(--text); border: 1.5px solid var(--border); cursor: pointer;
+
+}
+
+.cal-cell.avail:hover { border-color: var(--primary); color: var(--primary); background: #fffaf8; }
+
+.cal-cell.selected { background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; }
+
+.cal-cell.sun { color: #ffb3b3; }
+
+.cal-cell.sat { color: #b3c6ff; }
+
+
+
+/* 메뉴 리스트 */
+
+.menu-section { animation: fadeIn 0.4s ease; margin-top: 10px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+
+
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+
+.menu-card {
+
+  background: #fff; border-radius: 18px; padding: 18px; box-shadow: var(--shadow);
+
+  border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;
+
+}
+
+.slot-badge {
+
+  display: inline-flex; align-items: center; justify-content: center;
+
+  width: 24px; height: 24px; border-radius: 8px; font-size: 12px; font-weight: 900; color: #fff;
+
+}
+
+.slot-label { font-size: 11px; font-weight: 800; color: var(--text-sub); margin-left: 6px; }
+
+.menu-name { font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--text); }
+
+</style>
+
+</head>
+
+<body>
+
+
+
+<header class="header">
+
+  <div class="logo-title">🍱 맘가득찬 식단표</div>
+
+</header>
+
+
+
+<main id="mainPage">
+
+  <section>
+
+    <div class="sec-title">4월 예약 달력</div>
+
+    <div class="sec-sub">식단이 궁금한 날짜를 선택하세요</div>
+
+   
+
+    <div class="cal-card">
+
+      <div class="cal-month">2026년 4월</div>
+
+      <div class="cal-head">
+
+        <div style="color:#EF476F">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div style="color:#4361EE">토</div>
+
+      </div>
+
+      <div class="cal-grid" id="calGrid"></div>
+
+    </div>
+
+  </section>
+
+
+
+  <section id="menuDisplay" class="menu-section hidden">
+
+    <div class="sec-title" id="selectedDateText" style="font-size:18px; border-left: 4px solid var(--primary); padding-left: 12px;"></div>
+
+    <div class="menu-grid" id="menuGrid"></div>
+
+  </section>
+
+</main>
+
+
+
+<script>
+
+// 메뉴 데이터
+
+const MENU_DATA = {
+
+  "2026-04-01":{A:"순살 고등어 구이",B:"오이 크래미무침 & 숙주무침",C:"닭봉 감자 고구마 조림",D:"명란 전복 버터 솥밥",E:"아기 백짬뽕탕",F:"한우 당면 불고기 덮밥소스"},
+
+  "2026-04-03":{A:"한우 버섯 크림 스파게티",B:"견과류 잔멸치 볶음",C:"양배추 찜 & 한돈 된장볶음",D:"한우 오색 비빔밥재료",E:"닭곰탕",F:"한우 누룽지 야채죽"},
+
+  "2026-04-06":{A:"한돈 파인애플 찹스테이크",B:"한우 렌틸콩 하이라이스",C:"짜장 고구마 찜닭",D:"순살 명태 데리야끼 조림",E:"한우 시래기국",F:"오징어 먹물 크림 리조토"},
+
+  "2026-04-08":{A:"닭안심 수제 소세지",B:"들깨 무 볶음 & 고구마 볶음",C:"한돈 두부 야채전",D:"닭고기 훈제오리 양배추 볶음",E:"새우 콩나물 무국",F:"한우 강된장 덮밥소스"},
+
+  "2026-04-10":{A:"시금치 크림 함박스테이크",B:"유부 참나물 볶음",C:"한돈 간장 불고기",D:"한우 야채 두부 버무리",E:"한우 갈비탕",F:"닭고기 찹쌀 야채죽"}
+
+};
+
+
+
+const SLOTS = {A:"메인", B:"반찬", C:"찜/볶음", D:"덮밥", E:"국/탕", F:"죽/리조토"};
+
+const COLORS = {A:"#FF6B6B", B:"#4ECDC4", C:"#45B7D1", D:"#96CEB4", E:"#F7C59F", F:"#C77DFF"};
+
+
+
+// 페이지 로드 시 바로 실행
+
+window.onload = () => {
+
+  renderCalendar();
+
+};
+
+
+
+function renderCalendar() {
+
+  const grid = document.getElementById('calGrid');
+
+  grid.innerHTML = '';
+
+  const firstDay = new Date(2026, 3, 1).getDay();
+
+
+
+  for(let i=0; i<firstDay; i++) {
+
+    grid.appendChild(document.createElement('div'));
+
+  }
+
+
+
+  for(let d=1; d<=30; d++) {
+
+    const ds = `2026-04-${String(d).padStart(2,'0')}`;
+
+    const cell = document.createElement('div');
+
+    const dow = new Date(2026, 3, d).getDay();
+
+   
+
+    cell.className = 'cal-cell';
+
+    if(dow === 0) cell.classList.add('sun');
+
+    if(dow === 6) cell.classList.add('sat');
+
+    cell.textContent = d;
+
+
+
+    if(MENU_DATA[ds]) {
+
+      cell.classList.add('avail');
+
+      cell.onclick = () => showMenu(ds, cell);
+
+    }
+
+    grid.appendChild(cell);
+
+  }
+
+}
+
+
+
+function showMenu(ds, cell) {
+
+  document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+
+  cell.classList.add('selected');
+
+
+
+  const menu = MENU_DATA[ds];
+
+  const display = document.getElementById('menuDisplay');
+
+  const grid = document.getElementById('menuGrid');
+
+ 
+
+  const day = ds.split('-')[2];
+
+  document.getElementById('selectedDateText').textContent = `4월 ${day}일 오늘의 식단`;
+
+ 
+
+  grid.innerHTML = Object.entries(menu).map(([s, name]) => `
+
+    <div class="menu-card">
+
+      <div>
+
+        <span class="slot-badge" style="background:${COLORS[s]}">${s}</span>
+
+        <span class="slot-label">${SLOTS[s]}</span>
+
+      </div>
+
+      <div class="menu-name">${name}</div>
+
+    </div>
+
+  `).join('');
+
+
+
+  display.classList.remove('hidden');
+
+  window.scrollTo({ top: display.offsetTop - 80, behavior: 'smooth' });
+
+}
+
+</script>
+
+</body>
+
+</html>
